@@ -44,10 +44,12 @@ jobs:
           fi
 
       # Step 4: Set up GitHub CLI
-      - name: Install GitHub CLI
+      - name: Install GitHub CLI and authenticate
         run: |
           sudo apt-get install -y gh
           echo "${{ secrets.TOKEN_GITHUB }}" | gh auth login --with-token
+          # Add this to verify token permissions
+          gh auth status
 
       # Step 5: Update GitHub Secrets
       - name: Update GitHub Secrets
