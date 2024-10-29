@@ -2,7 +2,7 @@ name: Rotate AWS Access Key
 
 on:
   schedule:
-    - cron: '*/10 * * * *'  # Runs on the first day every 3 months
+    - cron: '*/5 * * * *'  # Runs on the first day every 3 months
 
 jobs:
   rotate-aws-keys:
@@ -20,9 +20,13 @@ jobs:
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: us-east-1
         run: |
           aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
           aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
+          aws configure set default.region $AWS_DEFAULT_REGION
+
+
 
       # Step 3: Create a new access key
       - name: Generate new AWS access key
