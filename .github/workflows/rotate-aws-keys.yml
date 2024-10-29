@@ -2,7 +2,7 @@ name: Rotate AWS Access Key
 
 on:
   schedule:
-    - cron: '0 0 1 */3 *'  # Runs at every 5 minutes
+    - cron: '*/5 * * * *'  # Runs at every 5 minutes
 
 jobs:
   rotate-aws-keys:
@@ -62,3 +62,8 @@ jobs:
         run: |
           OLD_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
           aws iam delete-access-key --access-key-id "$OLD_ACCESS_KEY_ID" --user-name coba
+      
+      # Step 7: Clean up
+      - name: Clean up
+        run: |
+          rm new_access_key_id.txt new_secret_access_key.txt
