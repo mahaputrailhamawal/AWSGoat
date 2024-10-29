@@ -2,13 +2,17 @@ name: Rotate AWS Access Key
 
 on:
   schedule:
-    - cron: '*/5 * * * *'  # Runs on
+    - cron: '*/5 * * * *'  # Runs at every 5 minutes
 
 jobs:
   rotate-aws-keys:
     runs-on: ubuntu-latest
 
     steps:
+      # Add this checkout step at the beginning
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
       # Step 1: Set up AWS CLI
       - name: Install AWS CLI
         run: |
@@ -20,21 +24,24 @@ jobs:
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_DEFAULT_REGION: us-east-1
+          AWS_DEFAULT_REGION: us-east-1  # Add your region
         run: |
           aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
           aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
           aws configure set default.region $AWS_DEFAULT_REGION
 
-
-
       # Step 3: Create a new access key
       - name: Generate new AWS access key
         id: new_key
         run: |
-          NEW_KEY=$(aws iam create-access-key --user-name coba --query 'AccessKey.{AccessKeyId:AccessKeyId,SecretAccessKey:SecretAccessKey}' --output json)
-          echo "${NEW_KEY}" | jq -r '.AccessKeyId' > new_access_key_id.txt
-          echo "${NEW_KEY}" | jq -r '.SecretAccessKey' > new_secret_access_key.txt
+          NEW_KEY=$(aws iam create-access-key --user-name coba --output json)
+          if [ $? -eq 0 ]; then
+            echo "${NEW_KEY}" | jq -r '.AccessKey.AccessKeyId' > new_access_key_id.txt
+            echo "${NEW_KEY}" | jq -r '.AccessKey.SecretAccessKey' > new_secret_access_key.txt
+          else
+            echo "Failed to create new access key"
+            exit 1
+          fi
 
       # Step 4: Set up GitHub CLI
       - name: Install GitHub CLI
@@ -42,7 +49,7 @@ jobs:
           sudo apt-get install -y gh
           echo "${{ secrets.TOKEN_GITHUB }}" | gh auth login --with-token
 
-      # Step 5: Update GitHub Secrets with new keys
+      # Step 5: Update GitHub Secrets
       - name: Update GitHub Secrets
         run: |
           gh secret set AWS_ACCESS_KEY_ID --body "$(cat new_access_key_id.txt)"
