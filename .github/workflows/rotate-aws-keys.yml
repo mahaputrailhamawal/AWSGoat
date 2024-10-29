@@ -48,4 +48,4 @@ jobs:
       - name: Delete old AWS access key
         run: |
           OLD_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws iam delete-access-key --access-key-id "$OLD_ACCESS_KEY_ID" --user-name YourIAMUserName
+          aws iam delete-access-key --access-key-id "$OLD_ACCESS_KEY_ID" --user-name coba
