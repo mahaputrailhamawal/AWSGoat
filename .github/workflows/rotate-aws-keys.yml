@@ -2,7 +2,7 @@ name: Rotate AWS Access Key
 
 on:
   schedule:
-    - cron: '*/5 * * * *'  # Runs on the first day every 3 months
+    - cron: '*/5 * * * *'  # Runs on
 
 jobs:
   rotate-aws-keys:
