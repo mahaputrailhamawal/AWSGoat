@@ -1,0 +1,51 @@
+name: Rotate AWS Access Key
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'  # Runs on the first day every 3 months
+
+jobs:
+  rotate-aws-keys:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Set up AWS CLI
+      - name: Install AWS CLI
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y awscli
+
+      # Step 2: Configure AWS CLI with current keys
+      - name: Configure AWS credentials
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        run: |
+          aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
+          aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
+
+      # Step 3: Create a new access key
+      - name: Generate new AWS access key
+        id: new_key
+        run: |
+          NEW_KEY=$(aws iam create-access-key --user-name coba --query 'AccessKey.{AccessKeyId:AccessKeyId,SecretAccessKey:SecretAccessKey}' --output json)
+          echo "${NEW_KEY}" | jq -r '.AccessKeyId' > new_access_key_id.txt
+          echo "${NEW_KEY}" | jq -r '.SecretAccessKey' > new_secret_access_key.txt
+
+      # Step 4: Set up GitHub CLI
+      - name: Install GitHub CLI
+        run: |
+          sudo apt-get install -y gh
+          echo "${{ secrets.TOKEN_GITHUB }}" | gh auth login --with-token
+
+      # Step 5: Update GitHub Secrets with new keys
+      - name: Update GitHub Secrets
+        run: |
+          gh secret set AWS_ACCESS_KEY_ID --body "$(cat new_access_key_id.txt)"
+          gh secret set AWS_SECRET_ACCESS_KEY --body "$(cat new_secret_access_key.txt)"
+
+      # Step 6: Delete the old access key
+      - name: Delete old AWS access key
+        run: |
+          OLD_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws iam delete-access-key --access-key-id "$OLD_ACCESS_KEY_ID" --user-name YourIAMUserName
